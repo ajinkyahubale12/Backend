@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/fileUpload.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import  jwt from "jsonwebtoken"
+import { json } from "express";
 
 const generateAccessAndRefreshTokens = async(userId) => {
   try {
@@ -222,4 +223,120 @@ try {
 
 })
 
-export { registerUser , loginUser, logoutUser, refreshAccessToken }
+const changeCurrentPassword = asyncHAndler(async(req,res) => {
+  const {oldPassword, newPAssword} = req.body
+
+const user = await User.findById(req.user?._id)
+const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+if (!isPasswordCorrect) {
+  throw new ApiError(400, "invalid old password")
+}
+
+user.password = newPAssword
+await user.save({ validateBeforeSave: false})
+
+return res
+.status(200
+.json( new ApiResponse(200, {}, "password changed successfully"))
+)
+
+})
+
+const getCurrentUser = asyncHAndler(async(req,res) => {
+  return res
+  .status(200)
+  .json(200, req.user, "current user fetched successfully")
+})
+
+const updateAccountDetailes = asyncHAndler(async(req, res) => {
+  const {fullname, email} = req.body
+
+  if (!fullname || !email) {
+    throw new ApiError(400, "all fields are required")
+  }
+
+  const user = User.findByIdAndUpdate (
+    req.user?._id,
+    {
+      // mongodb operator
+      $set: {
+        fullname: fullname,
+        email: email
+      }
+    },
+    {new: true}   // return update value
+  ).select("-password")
+
+  return res
+  .status(200)
+  .json(200, user, "account details updated successfully")
+})
+
+const updateUserAvatar = asyncHAndler(async(req, res) => {
+  const avatarLocalPath = req.file?.path
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "avatar file is missing")
+  }
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+  if (!avatar.url) {
+    throw new ApiError(400, "error while uploading on avatar")
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      // mongodb operator
+      $set: {
+        avatar: avatar.url
+      }
+    },
+    {
+      new: true
+    }
+  ).select("-password")
+
+  return res
+  .status(200)
+  .json(
+    new ApiResponse(200,user, "avatar image updated successfullly")
+  )
+
+})
+
+const updateUserCoverImage = asyncHAndler(async(req,res) => {
+  const coverLocalPath = req.file?.path
+
+  if (!coverLocalPath) {
+    throw new ApiError(400, "coverimage is missing")
+  }
+
+  const coverImage = await uploadOnCloudinary(coverLocalPath)
+
+  if (!coverImage) {
+    throw new ApiError(400, "error while uploading on coverimage")
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      // mongodb operator
+      $set: {
+        coverImage: coverImage.url
+      }
+    },
+    {new: true}
+  ).select("-password")
+
+  return res
+  .status(200)
+  .json(
+    new ApiResponse(200,user, "cover image updated successfullly")
+  )
+
+})
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetailes, updateUserAvatar, updateUserCoverImage }
