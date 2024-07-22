@@ -14,7 +14,7 @@ dotenv.config({
 connectDB()
   .then(() => {
     // Start the server after the database connection is established
-    app.listen(process.env.PORT || 8000, () => {
+    app.listen(process.env.PORT || 5000, () => {
       console.log(`Server is running on port: ${process.env.PORT || 8000}`);
     });
   })

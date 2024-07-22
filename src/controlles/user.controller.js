@@ -149,7 +149,7 @@ const logoutUser = asyncHAndler(async(req,res) => {
     {
        // mongodb operator
        $set: {
-        refreshToken: undefined
+        refreshToken: 1
        }
     },
     {
